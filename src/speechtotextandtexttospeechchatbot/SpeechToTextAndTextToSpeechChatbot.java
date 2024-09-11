@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.InputMismatchException;
 import java.util.Random;
 import java.util.Scanner;
+import java.awt.*;
+import javax.swing.*;
+import org.json.JSONArray;
 
 /**
  *
@@ -22,48 +25,58 @@ import java.util.Scanner;
 public class SpeechToTextAndTextToSpeechChatbot {
 
     public static void main(String[] args) {
+        mainWindow();
         
+        Scanner scanner = new Scanner(System.in);
+        boolean running = true;
+
         
-        fetchPokemon();
-//        Scanner scanner = new Scanner(System.in);
-//        boolean running = true;
-//
-//        while (running) {
-//            try {
-//                System.out.println("Choose an option: ");
-//                System.out.println("1. Text to Speech");
-//                System.out.println("2. Chatbot");
-//                System.out.println("3. All available voices");
-//                System.out.println("4. Exit");
-//
-//                int choice = scanner.nextInt();
-//                scanner.nextLine();  // Consume newline
-//
-//                switch (choice) {
-//                    case 1:
-//                        System.out.println("Enter text to convert to speech:");
-//                        String text = scanner.nextLine();
-//                        textToSpeech(text);
-//                        break;
-//                    case 2:
-//                        chatbot();
-//                        break;
-//                    case 3:
-//                        Voices();
-//                        break;
-//                    case 4:
-//                        running = false;  // Exit the loop
-//                        System.out.println("Exiting...");
-//                        break;
-//                    default:
-//                        System.out.println("Invalid choice. Please enter 1, 2, or 3.");
-//                }
-//            } catch (InputMismatchException e) {
-//                System.out.println("Invalid input. Please enter a number.");
-//                scanner.nextLine(); // Clear the buffer
-//            }
-//        }
-//        scanner.close();
+    }
+    
+    public static void mainWindow() 
+    {
+        JFrame win = new JFrame("Welcome window");
+        win.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        win.setSize(400, 400);
+        
+        JPanel topPnl = new JPanel();
+        JPanel btmPnl = new JPanel();
+        
+        topPnl.setPreferredSize(new Dimension(400, 100));
+        
+        JLabel welMsg = new JLabel("Welcome");
+        
+        topPnl.add(welMsg);
+        
+        JButton whoPokemonBtn = new JButton("Who is that Pokemon?");
+        JButton jokeBtn = new JButton("Want to hear a joke?");
+        JButton extBtn = new JButton("Exit");
+        
+        btmPnl.add(whoPokemonBtn);
+        btmPnl.add(jokeBtn);
+        btmPnl.add(extBtn);
+        
+        win.add(topPnl, BorderLayout.NORTH);
+        win.add(btmPnl, BorderLayout.SOUTH);
+        
+        whoPokemonBtn.addActionListener(e -> 
+        {
+            fetchPokemon();
+        });
+        
+        jokeBtn.addActionListener(e -> 
+        {
+            getJoke();
+        });
+        
+        extBtn.addActionListener(e -> 
+        {
+            closeWindow(win);
+        });
+        
+        win.setLayout(new FlowLayout());
+        
+        win.setVisible(true);
     }
     
     public static void Voices(){
@@ -142,7 +155,7 @@ public class SpeechToTextAndTextToSpeechChatbot {
         {
             Random randm = new Random();
             int randomId = randm.nextInt(151)+ 1;
-            String urlString = "https://pokeapi.co/api/v2/pokemon/" + randomId;
+            String urlString = "https://pokeapi.co/api/v2/pokemon/" + 25;
             URL url = new URL(urlString);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             
@@ -169,9 +182,51 @@ public class SpeechToTextAndTextToSpeechChatbot {
             {
                 String name = jsonResponse.getString("name");
                 int id = jsonResponse.getInt("id");
-
-                System.out.println("Name: " + name);
-                System.out.println("ID: " + id);
+                
+                // Get the flavour text
+                String speciesURL = "https://pokeapi.co/api/v2/pokemon-species/" + 25;
+                URL speciesAPI = new URL(speciesURL);
+                HttpURLConnection speciesCon = (HttpURLConnection) url.openConnection();
+                
+                speciesCon.getRequestMethod();
+                
+                BufferedReader specReader = new BufferedReader(new InputStreamReader(speciesCon.getInputStream()));
+                StringBuilder specContent = new StringBuilder();
+                
+                while((line = specReader.readLine())!= null) 
+                {
+                    specContent.append(line).append("\n");
+                }
+                System.out.println("EISH \n" + specContent);
+                specReader.close();
+                
+                JSONObject resp2 = new JSONObject(specContent.toString());
+                
+                String flavorText = "";
+                
+                if (resp2.has("flavor_text_entries") ) 
+                {
+                    JSONArray flavorTextEnts = resp2.optJSONArray("flavor_text_entries");
+                    for(int i=0; i < 2; i++)  
+                    {
+                        JSONObject entry = flavorTextEnts.getJSONObject(i);
+                        if (entry.getJSONObject("language").getString("name").equals("en")) 
+                        {
+                            flavorText = entry.getString("flavor_text").replaceAll("\n", " ");
+                            break;
+                        }
+                    }
+                }
+                String text = "Name: " + name + " \n" 
+                        + "ID: " + id + " \n" 
+                        + "Flavor Text: " + flavorText + " \n";
+                
+                String text1 = name ;
+                
+                System.out.println(resp2.has("flavor_text_entries"));
+                textToSpeech(text1);
+                JOptionPane.showMessageDialog(null, text);
+                
             } 
             else 
             {
@@ -182,6 +237,63 @@ public class SpeechToTextAndTextToSpeechChatbot {
         {
             e.printStackTrace();
         }
+    }
+    
+    public static void getJoke() 
+    {
+        StringBuilder content = new StringBuilder();
+        try 
+        {
+            Random randm = new Random();
+            int randomId = randm.nextInt(151)+ 1;
+            String urlString = "https://api.chucknorris.io/jokes/random";
+            URL url = new URL(urlString);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+
+            connection.getRequestMethod();
+            
+            // wrapping the urlconnection in a bufferedreader  
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(connection.getInputStream()));  
+            String line;  
+            // reading from the urlconnection using the bufferedreader  
+            while ((line = bufferedReader.readLine()) != null)  
+            {  
+              content.append(line).append("\n");  
+              
+            } 
+            System.out.println(content);
+            
+            
+            bufferedReader.close(); 
+            
+            // Parse JSON response
+            JSONObject jsonResponse = new JSONObject(content.toString());
+            
+            if (jsonResponse != null) 
+            {
+                String joke = jsonResponse.getString("value");
+                
+                System.out.println(jsonResponse.toString());
+                textToSpeech(joke);
+                JOptionPane.showMessageDialog(null, joke);
+                
+            } 
+            else 
+            {
+                System.out.println("Failed to fetch Pokémon data.");
+            }
+        }
+        catch(Exception e) 
+        {
+            e.printStackTrace();
+        }
+    }
+    
+    // method to close the windows
+    public static void closeWindow(JFrame window)
+    {
+        textToSpeech("Bye-Bye");
+        window.dispose();
     }
     //-------------------------00ooo0oo End of file oo0ooo00------------------//
 }
